@@ -63,8 +63,8 @@ module Authlogic
       
       def self.included(base) #:nodoc:
         base.send :include, ActiveSupport::Callbacks
-        base.define_callbacks *METHODS + [{:terminator => 'result == false'}]
-        base.define_callbacks *['persist', {:terminator => 'result == true'}]
+        base.define_callbacks *METHODS + [{:terminator => callback_terminator}]
+        base.define_callbacks *['persist', {:terminator => callback_terminator}]
 
         # If Rails 3, support the new callback syntax
         if base.singleton_class.method_defined?(:set_callback)
@@ -79,6 +79,14 @@ module Authlogic
       end
       
       private
+        def self.callback_terminator
+          if ::ActiveSupport::VERSION::STRING >= '4.0'
+            lambda { |target, result| result == true }
+          else
+            'result == false'
+          end
+        end
+
         METHODS.each do |method|
           class_eval <<-"end_eval", __FILE__, __LINE__
             def #{method}
